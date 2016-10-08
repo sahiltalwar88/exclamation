@@ -1,0 +1,3 @@
+rootProject.name = 'Exclamation'
+
+include ':app'

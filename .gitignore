@@ -1,3 +1,14 @@
+# Stupid macs
+.DS_Store
+
+# Stupid IntelliJ / Android Studio
+.idea
+android/.idea
+ios/.idea
+
+# This is a React Native application, so we need node style ignores too
+node_modules
+
 # Built application files
 *.apk
 *.ap_
