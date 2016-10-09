@@ -1,7 +1,7 @@
 # README
 
 This project was inspired by a serendipitous meeting during the Zoohackathon of 2016.
-While my teammates - @csaminak, @jootse84, and @nevillelauren - and I worked on the hackathon, some members of the LAGA and Eagle groups from Uganda and Cameroon visited the National Zoo and told the group about what they did and some of the challenges they faced.
+While my teammates - @csaminak, @jootse84, and @nevillelauren - and I worked on a separate app at the hackathon (which we hope to release an alpha version of soon!), some members of the LAGA and Eagle groups from Uganda and Cameroon visited the National Zoo and told the group about what they did and some of the challenges they faced.
 
 One of the challenges they highlighted in particular was that they have very little specialized technology to support their jobs. In particular, this becomes especially problematic when they get into difficult or even dangerous situations. When this happens, they're currently forced to rely on tools like WhatsApp to manually tell their colleagues their location and ask for help.
 
