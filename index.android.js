@@ -14,11 +14,29 @@ class Exclamation extends Component {
   sendMessage (position) {
     if (!this.state.notified) {
       let { coords } = position
+      let alert_message = `Hey I am in danger here, find me here!`
+      let map_url = `http://maps.google.com/maps?q=${coords.latitude},${coords.longitude}`
+
       let shareOptions = {
         title: 'DANGER',
-        message: `Hey I am in danger here, find me here!`,
-        url: `http://maps.google.com/maps?q=${coords.latitude},${coords.longitude}`
+        message: alert_message,
+        url: map_url
       }
+
+      var SmsAndroid = require('react-native-sms-android');
+      SmsAndroid.sms(
+        '123456789', // phone number to send sms to
+        `${alert_message} ${map_url}`, // sms body
+        'sendDirect',
+        (err, message) => {
+          if (err) {
+            console.log("error");
+          } else {
+            console.log(message); // callback message
+          }
+        }
+      )
+
       Share.shareSingle(Object.assign(shareOptions, {
         'social': 'whatsapp'
       }))
