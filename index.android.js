@@ -29,8 +29,8 @@ class Exclamation extends Component {
     const host = AsyncStorage.getItem('host').then(host => host)
     const password = AsyncStorage.getItem('password').then(password => password)
 
-    alert(JSON.stringify(host, null, 2))
-    alert(JSON.stringify(password, null, 2))
+    // alert(JSON.stringify(host, null, 2))
+    // alert(JSON.stringify(password, null, 2))
 
     if (!server && host && password && user) {
       const connectionSettings = {
@@ -51,10 +51,10 @@ class Exclamation extends Component {
     const subject = AsyncStorage.getItem('subject').then(subject => subject)
     const user = AsyncStorage.getItem('user').then(user => user)
 
-    alert(JSON.stringify(emails, null, 2))
-    alert(JSON.stringify(msg, null, 2))
-    alert(JSON.stringify(subject, null, 2))
-    alert(JSON.stringify(user, null, 2))
+    // alert(JSON.stringify(emails, null, 2))
+    // alert(JSON.stringify(msg, null, 2))
+    // alert(JSON.stringify(subject, null, 2))
+    // alert(JSON.stringify(user, null, 2))
 
     const server = this.initializeEmailServer(user)
     if (server) {
@@ -75,13 +75,12 @@ class Exclamation extends Component {
     if (!this.state.notified) {
       AsyncStorage.getItem('msg').then((alert_message) => {
         let { coords } = position
-        const safeMessage = alert_message || defaultMessage
         let map_url = `http://maps.google.com/maps?q=${coords.latitude},${coords.longitude}`
-        const fullMessageBody = `${safeMessage} ${map_url}`
+        const fullMessageBody = `${alert_message} ${map_url}`
 
         let shareOptions = {
           title: 'DANGER',
-          message: safeMessage,
+          message: alert_message,
           url: map_url
         }
 
@@ -102,7 +101,7 @@ class Exclamation extends Component {
           })
         })
 
-        this.sendEmail(fullMessageBody)
+        // this.sendEmail(fullMessageBody)
 
         Share.shareSingle(Object.assign(shareOptions, {
           'social': 'whatsapp'
