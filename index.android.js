@@ -1,18 +1,11 @@
 import React, { Component } from 'react'
 import { AppRegistry, AsyncStorage } from 'react-native'
 import { Container, Header, Title, Content, Spinner } from 'native-base'
-// import email from 'emailjs'
 import Settings from './components/settings'
 import Share from 'react-native-share'
 import SmsAndroid from 'react-native-sms-android'
 
-let server = null
-const defaultMessage = `Hey I am in danger here, find me here!`
-
-const getSecuritySetting = (host) => {
-  const microsoftHost = 'smtp-mail.outlook.com'
-  return host === microsoftHost ? { ciphers: 'SSLv3' } : true
-}
+const Mailer = require('NativeModules').RNMail
 
 class Exclamation extends Component {
   constructor (props) {
@@ -25,106 +18,48 @@ class Exclamation extends Component {
       .then((value) => this.setState({ ready: !!value }))
   }
 
-  initializeEmailServer (user) {
-    const host = AsyncStorage.getItem('host').then(host => host)
-    const password = AsyncStorage.getItem('password').then(password => password)
-
-    // alert(JSON.stringify(host, null, 2))
-    // alert(JSON.stringify(password, null, 2))
-
-    if (!server && host && password && user) {
-      const connectionSettings = {
-        host: host,
-        password: password,
-        tls: getSecuritySetting(host),
-        user: user
-      }
-
-      server = email.server.connect(connectionSettings)
-    }
-
-    return server
-  }
-
   sendEmail (msg) {
-    const emails = AsyncStorage.getItem('emails').then(emails => emails)
-    const subject = AsyncStorage.getItem('subject').then(subject => subject)
-    const user = AsyncStorage.getItem('user').then(user => user)
-
-    // alert(JSON.stringify(emails, null, 2))
-    // alert(JSON.stringify(msg, null, 2))
-    // alert(JSON.stringify(subject, null, 2))
-    // alert(JSON.stringify(user, null, 2))
-
-    const server = this.initializeEmailServer(user)
-    if (server) {
-      emails.split(',').forEach(email => {
-        server.send(
-          { text: msg, from: user, to: email.trim(), subject: subject, 'reply-to': user },
-          (err, message) =>
-            message
-              // TODO: ST - Replace with sane logs
-              ? alert(JSON.stringify(message, null, 2))
-              : alert(JSON.stringify(err, null, 2))
-        )
+    AsyncStorage.getItem('emailList').then(emails => {
+      AsyncStorage.getItem('subject').then(subject => {
+        Mailer.mail({ subject: subject, recipients: emails.split(','), body: msg }, () => {})
       })
-    }
+    })
   }
 
   sendMessage (position) {
-    if (!this.state.notified) {
-      AsyncStorage.getItem('msg').then((alert_message) => {
+    AsyncStorage.getItem('msg').then((alert_message) => {
+      AsyncStorage.getItem('phone_list').then((list) => {
         let { coords } = position
         let map_url = `http://maps.google.com/maps?q=${coords.latitude},${coords.longitude}`
         const fullMessageBody = `${alert_message} ${map_url}`
 
-        let shareOptions = {
-          title: 'DANGER',
-          message: alert_message,
-          url: map_url
-        }
+        list.split(',').forEach((phone) => SmsAndroid.sms(phone, fullMessageBody, 'sendDirect', () => {}))
 
-        AsyncStorage.getItem('phone_list').then((list) => {
-          list.split(',').forEach((telf) => {
-            SmsAndroid.sms(
-              telf, // phone number to send sms to
-              fullMessageBody, // sms body
-              'sendDirect',
-              (err, message) => {
-                if (err) {
-                  console.log('error')
-                } else {
-                  console.log(message) // callback message
-                }
-              }
-            )
+        if (!this.state.notified) {
+          let shareOptions = {
+            title: 'DANGER',
+            message: alert_message,
+            url: map_url
+          }
+
+          AsyncStorage.getItem('shareApp').then((shareApp) => {
+            if (shareApp.toLowerCase() === 'email') {
+              this.sendEmail(fullMessageBody)
+            } else if (shareApp.toLowerCase() === 'whatsapp') {
+              Share.shareSingle(Object.assign(shareOptions, { 'social': 'whatsapp' }))
+              this.setState({ notified: true })
+            }
           })
-        })
-
-        // this.sendEmail(fullMessageBody)
-
-        Share.shareSingle(Object.assign(shareOptions, {
-          'social': 'whatsapp'
-        }))
-        this.setState({
-          notified: true
-        })
+        }
       })
-    }
+    })
   }
 
   notify () {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        this.sendMessage(position)
-      },
-      (error) => alert(error.message),
-      {timeout: 20000, maximumAge: 1000}
-    )
+    navigator.geolocation.getCurrentPosition((position) =>
+      this.sendMessage(position), () => {}, {timeout: 80000, maximumAge: 1000})
 
-    navigator.geolocation.watchPosition((position) => {
-      this.sendMessage(position)
-    })
+    navigator.geolocation.watchPosition((position) => this.sendMessage(position))
   }
 
   render () {
