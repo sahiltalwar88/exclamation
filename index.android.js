@@ -3,7 +3,7 @@ import { AppRegistry, StyleSheet, View } from 'react-native'
 import email from 'emailjs'
 import Share from 'react-native-share'
 import SmsAndroid from 'react-native-sms-android'
-import SmsSettings from './components/sms-settings'
+import Settings from './components/settings'
 
 const defaultMessage = `Hey I am in danger here, find me here!`
 
@@ -19,19 +19,19 @@ class Exclamation extends Component {
     super(props)
 
     this.state = {
-      notified: false,
+      emails: null,
       host: null,
       message: null,
+      notified: false,
       password: null,
       phones: null,
       subject: null,
-      to: null,
       user: null
     }
   }
 
   sendEmail () {
-    const { host, message, password, subject, to, user } = this.state
+    const { emails, host, message, password, subject, user } = this.state
     if (!server && host && password && user) {
       const connectionSettings = {
         host: host,
@@ -43,14 +43,18 @@ class Exclamation extends Component {
       server = email.server.connect(connectionSettings)
     }
 
-    server && server.send(
-      { text: message, from: user, to: to, subject: subject, 'reply-to': user },
-      (err, message) =>
-        message
-          // TODO: ST - Remove
-          ? alert(JSON.stringify(message, null, 2))
-          : alert(JSON.stringify(err, null, 2))
-    )
+    if (server) {
+      emails.split(',').forEach(email => {
+        server.send(
+          { text: message, from: user, to: email.trim(), subject: subject, 'reply-to': user },
+          (err, message) =>
+            message
+              // TODO: ST - Replace with sane logs
+              ? alert(JSON.stringify(message, null, 2))
+              : alert(JSON.stringify(err, null, 2))
+        )
+      })
+    }
   }
 
   sendMessage (phones, message, position) {
@@ -105,11 +109,18 @@ class Exclamation extends Component {
   }
 
   render () {
+    const { emails, host, message, password, phones, subject, user } = this.state
+
     return (
       <View style={styles.container}>
-        <SmsSettings
-          updatePhones={ (phones) => this.setState({ phones }) }
-          updateMessage={ (message) => this.setState({ message }) } />
+        <Settings
+          emails={ emails } updateEmails={ (emails) => this.setState({ emails }) }
+          host={ host } updateHost={ (host) => this.setState({ host }) }
+          message={ message } updateMessage={ (message) => this.setState({ message }) }
+          phones={ phones } updatePhones={ (phones) => this.setState({ phones }) }
+          password={ password } updatePassword={ (password) => this.setState({ password }) }
+          subject={ subject } updateSubject={ (subject) => this.setState({ subject }) }
+          user={ user } updateUser={ (user) => this.setState({ user }) } />
       </View>
     )
   }
