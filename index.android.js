@@ -1,9 +1,11 @@
 import React, { Component } from 'react'
-import { AppRegistry, StyleSheet, View, Text } from 'react-native'
+import { AppRegistry, StyleSheet, View } from 'react-native'
 import email from 'emailjs'
 import Share from 'react-native-share'
 import SmsAndroid from 'react-native-sms-android'
 import SmsSettings from './components/sms-settings'
+
+const defaultMessage = `Hey I am in danger here, find me here!`
 
 const getSecuritySetting = (host) => {
   const microsoftHost = 'smtp-mail.outlook.com'
@@ -41,7 +43,7 @@ class Exclamation extends Component {
       server = email.server.connect(connectionSettings)
     }
 
-    server.send(
+    server && server.send(
       { text: message, from: user, to: to, subject: subject, 'reply-to': user },
       (err, message) =>
         message
@@ -51,10 +53,10 @@ class Exclamation extends Component {
     )
   }
 
-  sendMessage (position) {
+  sendMessage (phones, message, position) {
     if (!this.state.notified) {
       let { coords } = position
-      let alert_message = `Hey I am in danger here, find me here!`
+      let alert_message = message || defaultMessage
       let map_url = `http://maps.google.com/maps?q=${coords.latitude},${coords.longitude}`
 
       let shareOptions = {
@@ -63,18 +65,25 @@ class Exclamation extends Component {
         url: map_url
       }
 
-      SmsAndroid.sms(
-        '123456789', // phone number to send sms to
-        `${alert_message} ${map_url}`, // sms message
-        'sendDirect',
-        (err, message) => {
-          if (err) {
-            console.log('error')
-          } else {
-            console.log(message) // callback message
-          }
-        }
-      )
+      if (phones && phones.length) {
+        const sanitizedPhones = []
+        phones.split(',').forEach(p => sanitizedPhones.push(p.replace(/\D/g, '')))
+
+        sanitizedPhones.forEach(phone => {
+          SmsAndroid.sms(
+            phone, // phone number to send sms to
+            `${alert_message} ${map_url}`, // sms message
+            'sendDirect',
+            (err, message) => {
+              if (err) {
+                console.log('error')
+              } else {
+                console.log(message) // callback message
+              }
+            }
+          )
+        })
+      }
 
       Share.shareSingle(Object.assign(shareOptions, { 'social': 'whatsapp' }))
       this.setState({ notified: true })
@@ -87,7 +96,7 @@ class Exclamation extends Component {
         this.sendMessage(position)
       },
       (error) => alert(error.message),
-      {timeout: 20000, maximumAge: 1000}
+      { timeout: 20000, maximumAge: 1000 }
     )
 
     navigator.geolocation.watchPosition((position) => {
@@ -100,7 +109,7 @@ class Exclamation extends Component {
       <View style={styles.container}>
         <SmsSettings
           updatePhones={ (phones) => this.setState({ phones }) }
-          updateMessage={ (message) => this.setState({ message }) }/>
+          updateMessage={ (message) => this.setState({ message }) } />
       </View>
     )
   }
