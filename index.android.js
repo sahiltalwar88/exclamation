@@ -1,14 +1,48 @@
 import React, { Component } from 'react'
 import { AppRegistry, StyleSheet, View, Text } from 'react-native'
+import email from 'emailjs'
 import Share from 'react-native-share'
+import SmsAndroid from 'react-native-sms-android'
+
+const getSecuritySetting = (host) => {
+  const microsoftHost = 'smtp-mail.outlook.com'
+  return host === microsoftHost ? { ciphers: 'SSLv3' } : true
+}
+
+let server = null
 
 class Exclamation extends Component {
   constructor (props) {
     super(props)
 
     this.state = {
-      notified: false
+      notified: false,
+      body: null,
+      host: null,
+      password: null,
+      subject: null,
+      to: null,
+      user: null
     }
+  }
+
+  sendEmail () {
+    const { body, host, password, subject, to, user } = this.state
+    if (!server && host && password && user) {
+      const connectionSettings = {
+        host: host,
+        password: password,
+        tls: getSecuritySetting(host),
+        user: user
+      }
+
+      server = email.server.connect(connectionSettings)
+    }
+
+    server.send(
+      { text: body, from: user, to: to, subject: subject, 'reply-to': user },
+      (err, message) => { console.log(err || message) }
+    )
   }
 
   sendMessage (position) {
@@ -23,26 +57,21 @@ class Exclamation extends Component {
         url: map_url
       }
 
-      var SmsAndroid = require('react-native-sms-android');
       SmsAndroid.sms(
         '123456789', // phone number to send sms to
         `${alert_message} ${map_url}`, // sms body
         'sendDirect',
         (err, message) => {
           if (err) {
-            console.log("error");
+            console.log('error')
           } else {
-            console.log(message); // callback message
+            console.log(message) // callback message
           }
         }
       )
 
-      Share.shareSingle(Object.assign(shareOptions, {
-        'social': 'whatsapp'
-      }))
-      this.setState({
-        notified: true
-      })
+      Share.shareSingle(Object.assign(shareOptions, { 'social': 'whatsapp' }))
+      this.setState({ notified: true })
     }
   }
 
