@@ -1,52 +1,63 @@
 import React, { Component } from 'react'
-import { AppRegistry, StyleSheet, View, Text } from 'react-native'
+import { AppRegistry, StyleSheet, AsyncStorage } from 'react-native'
+import Settings from './components/settings'
 import Share from 'react-native-share'
+import { Container, Header, Title, Content, Spinner } from 'native-base'
 
 class Exclamation extends Component {
   constructor (props) {
     super(props)
 
-    this.state = {
-      notified: false
-    }
+    this.state = { notified: false }
+  }
+
+  componentWillMount() {
+    AsyncStorage.getItem('settingsReady').then((value) => this.setState({ready: value?true:false}))
   }
 
   sendMessage (position) {
     if (!this.state.notified) {
-      let { coords } = position
-      let alert_message = `Hey I am in danger here, find me here!`
-      let map_url = `http://maps.google.com/maps?q=${coords.latitude},${coords.longitude}`
+      AsyncStorage.getItem('msg').then((alert_message) => {
 
-      let shareOptions = {
-        title: 'DANGER',
-        message: alert_message,
-        url: map_url
-      }
+        let { coords } = position
+        let map_url = `http://maps.google.com/maps?q=${coords.latitude},${coords.longitude}`
 
-      var SmsAndroid = require('react-native-sms-android');
-      SmsAndroid.sms(
-        '123456789', // phone number to send sms to
-        `${alert_message} ${map_url}`, // sms body
-        'sendDirect',
-        (err, message) => {
-          if (err) {
-            console.log("error");
-          } else {
-            console.log(message); // callback message
-          }
+        let shareOptions = {
+          title: 'DANGER',
+          message: alert_message,
+          url: map_url
         }
-      )
 
-      Share.shareSingle(Object.assign(shareOptions, {
-        'social': 'whatsapp'
-      }))
-      this.setState({
-        notified: true
+        var SmsAndroid = require('react-native-sms-android');
+        AsyncStorage.getItem('phone_list').then((list) => {
+          list.split(",").forEach((telf) => {
+            SmsAndroid.sms(
+              telf, // phone number to send sms to
+              `${alert_message} ${map_url}`, // sms body
+              'sendDirect',
+              (err, message) => {
+                if (err) {
+                  console.log("error");
+                } else {
+                  console.log(message); // callback message
+                }
+              }
+            )
+          })
+        })
+
+        Share.shareSingle(Object.assign(shareOptions, {
+          'social': 'whatsapp'
+        }))
+        this.setState({
+          notified: true
+        })
+
       })
     }
   }
 
-  componentDidMount () {
+  notify () {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         this.sendMessage(position)
@@ -61,10 +72,23 @@ class Exclamation extends Component {
   }
 
   render () {
+    let content = <Settings />
+    let title = 'Settings'
+
+    if (this.state.ready) {
+      content = <Spinner />
+      title = 'Notifiyng...'
+      this.notify()
+    }
     return (
-      <View style={styles.container}>
-        <Text>Panic button</Text>
-      </View>
+      <Container>
+        <Header>
+          <Title>{title}</Title>
+        </Header>
+        <Content>
+          {content}
+        </Content>
+      </Container>
     )
   }
 }
