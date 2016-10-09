@@ -46,9 +46,8 @@ class Exclamation extends Component {
     return server
   }
 
-  sendEmail () {
+  sendEmail (msg) {
     const emails = AsyncStorage.getItem('emails').then(emails => emails)
-    const msg = AsyncStorage.getItem('msg').then(msg => msg)
     const subject = AsyncStorage.getItem('subject').then(subject => subject)
     const user = AsyncStorage.getItem('user').then(user => user)
 
@@ -76,12 +75,13 @@ class Exclamation extends Component {
     if (!this.state.notified) {
       AsyncStorage.getItem('msg').then((alert_message) => {
         let { coords } = position
-        const messageBody = alert_message || defaultMessage
+        const safeMessage = alert_message || defaultMessage
         let map_url = `http://maps.google.com/maps?q=${coords.latitude},${coords.longitude}`
+        const fullMessageBody = `${safeMessage} ${map_url}`
 
         let shareOptions = {
           title: 'DANGER',
-          message: messageBody,
+          message: safeMessage,
           url: map_url
         }
 
@@ -90,7 +90,7 @@ class Exclamation extends Component {
           list.split(',').forEach((telf) => {
             SmsAndroid.sms(
               telf, // phone number to send sms to
-              `${messageBody} ${map_url}`, // sms body
+              fullMessageBody, // sms body
               'sendDirect',
               (err, message) => {
                 if (err) {
@@ -102,6 +102,8 @@ class Exclamation extends Component {
             )
           })
         })
+
+        this.sendEmail(fullMessageBody)
 
         Share.shareSingle(Object.assign(shareOptions, {
           'social': 'whatsapp'
