@@ -139,15 +139,6 @@ class FinalSettings extends Component {
     return (
       <Container style={{margin: 10}}>
         <Content>
-          <InputGroup borderType='rounded' style={{marginTop: 30, margin: 5}}>
-            <Icon name='ios-person' style={{color: '#00C497'}}/>
-            <Input placeholder='Your name'
-              value={(this.state && this.state.name) || ''}
-              onChangeText={(name) => {
-                this.setState({name})
-                this.saveSettings({name}, 'name')
-              }}/>
-          </InputGroup>
           <InputGroup borderType='rounded' style={{margin: 5}}>
             <Icon name='ios-text' style={{color: '#00C497'}}/>
             <Input placeholder='Message subject'
@@ -167,30 +158,12 @@ class FinalSettings extends Component {
               }}/>
           </InputGroup>
           <InputGroup borderType='rounded' style={{margin: 5}}>
-            <Icon name='ios-person' style={{color: '#00C497'}}/>
-            <Input placeholder='Email username'
-              value={(this.state && this.state.user) || ''}
-              onChangeText={(user) => {
-                this.setState({user})
-                this.saveSettings({user}, 'user')
-              }}/>
-          </InputGroup>
-          <InputGroup borderType='rounded' style={{margin: 5}}>
-            <Icon name='ios-person' style={{color: '#00C497'}}/>
-            <Input placeholder='Email password'
-              value={(this.state && this.state.password) || ''}
-              onChangeText={(password) => {
-                this.setState({password})
-                this.saveSettings({password}, 'password')
-              }}/>
-          </InputGroup>
-          <InputGroup borderType='rounded' style={{margin: 5}}>
-            <Icon name='ios-person' style={{color: '#00C497'}}/>
-            <Input placeholder='SMTP server URL (smtp.gmail.com)'
-              value={(this.state && this.state.host) || ''}
-              onChangeText={(host) => {
-                this.setState({host})
-                this.saveSettings({host}, 'host')
+            <Icon name='ios-laptop' style={{color: '#00C497'}}/>
+            <Input placeholder='Send via whatsapp or email?'
+              value={(this.state && this.state.shareApp) || ''}
+              onChangeText={(shareApp) => {
+                this.setState({shareApp})
+                this.saveSettings({shareApp}, 'shareApp')
               }}/>
           </InputGroup>
           <Button block success iconRight style={{marginTop: 45, margin: 5}}
