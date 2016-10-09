@@ -1,33 +1,37 @@
 import React, { Component } from 'react'
-import { AppRegistry, StyleSheet, View, Text } from 'react-native'
-import email from 'emailjs'
+import { AppRegistry, AsyncStorage } from 'react-native'
+import { Container, Header, Title, Content, Spinner } from 'native-base'
+// import email from 'emailjs'
+import Settings from './components/settings'
 import Share from 'react-native-share'
 import SmsAndroid from 'react-native-sms-android'
+
+let server = null
+const defaultMessage = `Hey I am in danger here, find me here!`
 
 const getSecuritySetting = (host) => {
   const microsoftHost = 'smtp-mail.outlook.com'
   return host === microsoftHost ? { ciphers: 'SSLv3' } : true
 }
 
-let server = null
-
 class Exclamation extends Component {
   constructor (props) {
     super(props)
-
-    this.state = {
-      notified: false,
-      body: null,
-      host: null,
-      password: null,
-      subject: null,
-      to: null,
-      user: null
-    }
+    this.state = { notified: false }
   }
 
-  sendEmail () {
-    const { body, host, password, subject, to, user } = this.state
+  componentWillMount () {
+    AsyncStorage.getItem('settingsReady')
+      .then((value) => this.setState({ ready: !!value }))
+  }
+
+  initializeEmailServer (user) {
+    const host = AsyncStorage.getItem('host').then(host => host)
+    const password = AsyncStorage.getItem('password').then(password => password)
+
+    alert(JSON.stringify(host, null, 2))
+    alert(JSON.stringify(password, null, 2))
+
     if (!server && host && password && user) {
       const connectionSettings = {
         host: host,
@@ -39,43 +43,78 @@ class Exclamation extends Component {
       server = email.server.connect(connectionSettings)
     }
 
-    server.send(
-      { text: body, from: user, to: to, subject: subject, 'reply-to': user },
-      (err, message) => { console.log(err || message) }
-    )
+    return server
+  }
+
+  sendEmail (msg) {
+    const emails = AsyncStorage.getItem('emails').then(emails => emails)
+    const subject = AsyncStorage.getItem('subject').then(subject => subject)
+    const user = AsyncStorage.getItem('user').then(user => user)
+
+    alert(JSON.stringify(emails, null, 2))
+    alert(JSON.stringify(msg, null, 2))
+    alert(JSON.stringify(subject, null, 2))
+    alert(JSON.stringify(user, null, 2))
+
+    const server = this.initializeEmailServer(user)
+    if (server) {
+      emails.split(',').forEach(email => {
+        server.send(
+          { text: msg, from: user, to: email.trim(), subject: subject, 'reply-to': user },
+          (err, message) =>
+            message
+              // TODO: ST - Replace with sane logs
+              ? alert(JSON.stringify(message, null, 2))
+              : alert(JSON.stringify(err, null, 2))
+        )
+      })
+    }
   }
 
   sendMessage (position) {
     if (!this.state.notified) {
-      let { coords } = position
-      let alert_message = `Hey I am in danger here, find me here!`
-      let map_url = `http://maps.google.com/maps?q=${coords.latitude},${coords.longitude}`
+      AsyncStorage.getItem('msg').then((alert_message) => {
+        let { coords } = position
+        const safeMessage = alert_message || defaultMessage
+        let map_url = `http://maps.google.com/maps?q=${coords.latitude},${coords.longitude}`
+        const fullMessageBody = `${safeMessage} ${map_url}`
 
-      let shareOptions = {
-        title: 'DANGER',
-        message: alert_message,
-        url: map_url
-      }
-
-      SmsAndroid.sms(
-        '123456789', // phone number to send sms to
-        `${alert_message} ${map_url}`, // sms body
-        'sendDirect',
-        (err, message) => {
-          if (err) {
-            console.log('error')
-          } else {
-            console.log(message) // callback message
-          }
+        let shareOptions = {
+          title: 'DANGER',
+          message: safeMessage,
+          url: map_url
         }
-      )
 
-      Share.shareSingle(Object.assign(shareOptions, { 'social': 'whatsapp' }))
-      this.setState({ notified: true })
+        AsyncStorage.getItem('phone_list').then((list) => {
+          list.split(',').forEach((telf) => {
+            SmsAndroid.sms(
+              telf, // phone number to send sms to
+              fullMessageBody, // sms body
+              'sendDirect',
+              (err, message) => {
+                if (err) {
+                  console.log('error')
+                } else {
+                  console.log(message) // callback message
+                }
+              }
+            )
+          })
+        })
+
+        this.sendEmail(fullMessageBody)
+
+        Share.shareSingle(Object.assign(shareOptions, {
+          'social': 'whatsapp'
+        }))
+        this.setState({
+          notified: true
+        })
+      })
     }
   }
 
-  componentDidMount () {
+  notify () {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         this.sendMessage(position)
@@ -90,31 +129,25 @@ class Exclamation extends Component {
   }
 
   render () {
+    let content = <Settings />
+    let title = 'Settings'
+
+    if (this.state.ready) {
+      content = <Spinner />
+      title = 'Notifying...'
+      this.notify()
+    }
     return (
-      <View style={styles.container}>
-        <Text>Panic button</Text>
-      </View>
+      <Container>
+        <Header>
+          <Title>{title}</Title>
+        </Header>
+        <Content>
+          {content}
+        </Content>
+      </Container>
     )
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF'
-  },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5
-  }
-})
 
 AppRegistry.registerComponent('Exclamation', () => Exclamation)
