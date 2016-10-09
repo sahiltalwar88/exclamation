@@ -1,15 +1,9 @@
 import React, { Component } from 'react'
-import {
-  AppRegistry,
-  StyleSheet,
-  View,
-  Text
-} from 'react-native'
+import { AppRegistry, StyleSheet, View, Text } from 'react-native'
 import Share from 'react-native-share'
 
 class Exclamation extends Component {
-
-  constructor(props) {
+  constructor (props) {
     super(props)
 
     this.state = {
@@ -21,31 +15,31 @@ class Exclamation extends Component {
     if (!this.state.notified) {
       let { coords } = position
       let shareOptions = {
-        title: "DANGER",
+        title: 'DANGER',
         message: `Hey I am in danger here, find me here!`,
         url: `http://maps.google.com/maps?q=${coords.latitude},${coords.longitude}`
-      };
+      }
       Share.shareSingle(Object.assign(shareOptions, {
-        "social": "whatsapp"
-      }));
+        'social': 'whatsapp'
+      }))
       this.setState({
         notified: true
-      });
+      })
     }
   }
 
-  componentDidMount() {
+  componentDidMount () {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         this.sendMessage(position)
       },
       (error) => alert(error.message),
       {timeout: 20000, maximumAge: 1000}
-    );
+    )
 
     navigator.geolocation.watchPosition((position) => {
       this.sendMessage(position)
-    });
+    })
   }
 
   render () {
