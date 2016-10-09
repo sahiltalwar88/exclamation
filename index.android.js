@@ -3,6 +3,7 @@ import { AppRegistry, StyleSheet, View, Text } from 'react-native'
 import email from 'emailjs'
 import Share from 'react-native-share'
 import SmsAndroid from 'react-native-sms-android'
+import SmsSettings from './components/sms-settings'
 
 const getSecuritySetting = (host) => {
   const microsoftHost = 'smtp-mail.outlook.com'
@@ -17,9 +18,10 @@ class Exclamation extends Component {
 
     this.state = {
       notified: false,
-      body: null,
       host: null,
+      message: null,
       password: null,
+      phones: null,
       subject: null,
       to: null,
       user: null
@@ -27,7 +29,7 @@ class Exclamation extends Component {
   }
 
   sendEmail () {
-    const { body, host, password, subject, to, user } = this.state
+    const { host, message, password, subject, to, user } = this.state
     if (!server && host && password && user) {
       const connectionSettings = {
         host: host,
@@ -40,8 +42,12 @@ class Exclamation extends Component {
     }
 
     server.send(
-      { text: body, from: user, to: to, subject: subject, 'reply-to': user },
-      (err, message) => { console.log(err || message) }
+      { text: message, from: user, to: to, subject: subject, 'reply-to': user },
+      (err, message) =>
+        message
+          // TODO: ST - Remove
+          ? alert(JSON.stringify(message, null, 2))
+          : alert(JSON.stringify(err, null, 2))
     )
   }
 
@@ -59,7 +65,7 @@ class Exclamation extends Component {
 
       SmsAndroid.sms(
         '123456789', // phone number to send sms to
-        `${alert_message} ${map_url}`, // sms body
+        `${alert_message} ${map_url}`, // sms message
         'sendDirect',
         (err, message) => {
           if (err) {
@@ -92,7 +98,9 @@ class Exclamation extends Component {
   render () {
     return (
       <View style={styles.container}>
-        <Text>Panic button</Text>
+        <SmsSettings
+          updatePhones={ (phones) => this.setState({ phones }) }
+          updateMessage={ (message) => this.setState({ message }) }/>
       </View>
     )
   }
